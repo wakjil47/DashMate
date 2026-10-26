@@ -1244,7 +1244,7 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
   function clock() {
     var d = new Date();
     var hr = d.getHours();
-    var tHtml = lastL.clock24 === false
+    var tHtml = opt('clock24') === false
       ? ((hr % 12) || 12) + ':' + pad(d.getMinutes()) + '<small class="ap">' + (hr < 12 ? 'AM' : 'PM') + '</small>'
       : pad(hr) + ':' + pad(d.getMinutes());
     if (tHtml !== clock.t) { clock.t = tHtml; $('time').innerHTML = tHtml; }
@@ -1341,7 +1341,7 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
   var lastSpeed = null, lastGps = false;
   function setSpeed(kmh, gps) {
     lastSpeed = kmh; lastGps = gps;
-    var mph = lastL.speedMph === true;
+    var mph = opt('speedMph') === true;
     $('speed').textContent = gps && kmh != null ? (mph ? Math.round(kmh * 0.621371) : kmh) : '–';
     $('speedUnit').textContent = gps ? (mph ? 'mph' : 'km/h') : tr('noGps', 'no GPS');
   }
@@ -1498,6 +1498,13 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
   function isSmallPanel() { return !isPortraitSurface() && window.innerWidth < 620 && window.innerWidth / Math.max(1, window.innerHeight) <= 1.35; }
   function isTallScreen() { return isPortraitSurface() || (window.ddTallLock ? window.ddTallLock() : false); }
   var customLayout = null;
+  // Page-wide phone options (mph, media buttons, 24-hour clock) live in the saved layouts. The built-in
+  // layouts (small split panel, nothing saved yet) don't carry them, so fall back to the saved ones.
+  function opt(k) {
+    if (lastL && lastL[k] !== undefined) return lastL[k];
+    if (layoutPort && layoutPort[k] !== undefined) return layoutPort[k];
+    return layoutLand ? layoutLand[k] : undefined;
+  }
   function pickLayout() {
     if (customLayout) return customLayout;
     // Tall screens (Jaecoo J7) always use the tall layout; the wide one is only for wide screens.
@@ -1554,7 +1561,7 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
     });
     renderShortcuts(l.shortcuts);
     // Phone Settings "Dashboard media buttons": off hides prev / play / next on the music card.
-    $('controls').style.display = l.mediaButtons === false ? 'none' : '';
+    $('controls').style.display = opt('mediaButtons') === false ? 'none' : '';
     setSpeed(lastSpeed, lastGps);
     postGeometry();
   }

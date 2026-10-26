@@ -57,7 +57,12 @@ class CarLayout {
   }
 
   /// Sets page-wide options (e.g. `clockFont`, `clock24`) on both layouts, keeping the widgets.
-  static Future<void> setOptions(Map<String, dynamic> options) async {
+  /// Saves run one after another, so two switches flipped quickly can't overwrite each other.
+  static Future<void> _queue = Future.value();
+  static Future<void> setOptions(Map<String, dynamic> options) =>
+      _queue = _queue.then((_) => _setOptions(options)).catchError((_) {});
+
+  static Future<void> _setOptions(Map<String, dynamic> options) async {
     for (final tall in [false, true]) {
       final current = await load(tall);
       final hasWidgets = current != null && current['widgets'] is List && (current['widgets'] as List).isNotEmpty;
