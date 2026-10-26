@@ -135,6 +135,8 @@ object DashMateCarLife {
 
     /** The connection whose first session has already been classified. */
     private var classifiedConnection = -1L
+    /** postTime of the newest AA connection notification any decision has seen (epoch ms). */
+    private var lastSeenAaNotif = 0L
 
     private var watching = false
 
@@ -303,6 +305,21 @@ object DashMateCarLife {
         if (intent.action == CarContext.ACTION_NAVIGATE) {
             claim(now, "navigation intent")
             return StartDecision(Kind.AUTO, "navigation intent (handed to Waze)")
+        }
+        // 1b. A quick unplug/replug or AA restart can skip the NOT_CONNECTED update, so the observer
+        //     sees PROJECTION -> PROJECTION. A FRESH AA connection notification that is newer than any
+        //     we have seen means a new connection anyway: AA is starting us on its own -> AUTO.
+        if (aaNotif != null && aaNotif > 0L) {
+            val age = System.currentTimeMillis() - aaNotif
+            val isNewer = aaNotif > lastSeenAaNotif + 2_000L
+            val seenBefore = lastSeenAaNotif > 0L
+            lastSeenAaNotif = maxOf(lastSeenAaNotif, aaNotif)
+            if (isNewer && seenBefore && age < AUTO_START_MS && classifiedConnection == connectionId) {
+                newConnection(epochToElapsed(aaNotif), "fresh AA notification (missed disconnect)")
+                projectionLive = true
+                classifiedConnection = connectionId
+                return StartDecision(Kind.AUTO, "first session, AA reconnected ${age}ms ago (missed disconnect)")
+            }
         }
         // 2. A later session in a connection whose first session was already handled: the owner.
         if (lastType == CarConnection.CONNECTION_TYPE_PROJECTION && connectionId > 0L &&

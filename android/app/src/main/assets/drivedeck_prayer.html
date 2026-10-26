@@ -18,6 +18,8 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
     --shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 12px rgba(15,23,42,.06);
     --plate: 94%;                       /* surface opacity over a photo */
     --gloom: rgba(15,23,42,.10); --drop: rgba(71,85,105,.45);
+    /* Storm flash: white on a white page is invisible, so by day it is a soft blue glow from the sky (top). */
+    --flash: radial-gradient(130% 75% at 50% 0%, rgba(59,130,246,.42), rgba(147,197,253,.22) 55%, transparent 90%);
     --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--surface));
     --violet: var(--accent); --dim: var(--ink-2); --faint: var(--border);
     --sans: "Google Sans", Roboto, system-ui, sans-serif;
@@ -30,6 +32,7 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
     --shadow: none;
     --plate: 90%;
     --gloom: rgba(0,0,0,.35); --drop: rgba(215,225,240,.5);
+    --flash: var(--surface);            /* night: soft, never a bright flash */
     --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--surface));
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -51,8 +54,9 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
   #rain { position: absolute; inset: 0; opacity: 0; transition: opacity .25s ease; }
   .drop { position: absolute; top: -10%; width: 1.5px; height: 6vh; background: linear-gradient(transparent, var(--drop)); animation: fall linear infinite; will-change: transform; }
   @keyframes fall { to { transform: translateY(125vh) translateX(-4vh); } }
-  #flash { position: absolute; inset: 0; background: var(--surface); opacity: 0; }
+  #flash { position: absolute; inset: 0; background: var(--flash); opacity: 0; }
   #flash.on { animation: flash 7s infinite; }
+  @media (prefers-reduced-motion: reduce) { #flash.on { animation: none; } }
   @keyframes flash { 0%, 93%, 100% { opacity: 0; } 94% { opacity: .5; } 95% { opacity: .05; } 96% { opacity: .35; } }
 
   /* ---------- Layout: wide (default) ---------- */
@@ -124,14 +128,14 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
   /* ---------- Tall head units (Jaecoo J7 portrait): bigger, and the full list of times as rows ---------- */
   @media (max-aspect-ratio: 4/5) {
     html { font-size: clamp(14px, min(3.4vw, 1.8vh), 40px); }
-    #app { gap: 2rem; padding: calc(max(84px, 3.4rem) + var(--dd-extra, 0px)) 1.8rem 2rem; }
+    #app { gap: 2rem; padding: calc(72px + 3.6rem + var(--dd-extra, 0px)) 1.8rem 2rem; }
     #name { font-size: 3.8rem; } #countdown { font-size: 3.2rem; }
     #list { flex-direction: column; flex-wrap: nowrap; gap: .3rem; padding: .7rem; }
     .row { flex: none; flex-direction: row; align-items: center; gap: 1rem; padding: .6rem 1rem; }
     .row .n { font-size: 1.3rem; } .row .t { font-size: 1.4rem; }
     .row.marker { display: flex; } .row .tag { display: inline-block; }
     .row.marker .n, .row.marker .t { font-size: 1.1rem; }
-    #weather { top: max(16px, 1rem); right: 1.2rem; font-size: 1rem; }
+    #weather { top: calc(72px + var(--dd-extra, 0px)); right: 1.8rem; font-size: 1rem; }   /* below the dock bar, not under it */
   }
 
   /* ---------- Small Android Auto split-screen panel (e.g. 460×370): clear the floating dock bar ---------- */

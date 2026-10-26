@@ -174,6 +174,7 @@ class DashMatePresentation(
             context,
             onPageSelected = { targetPage -> DashMateStateBridge.setPage(targetPage) },
             onExit = { onExit?.invoke() },
+            onBack = { browserBack() },
         ).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -498,9 +499,17 @@ class DashMatePresentation(
         dockBar?.updateCurrentPage(highlight)
         deckWebView?.visibility = View.GONE
         browserWebView?.visibility = View.VISIBLE
-        browserBar.visibility = View.VISIBLE
+        // No floating bar over websites any more (it covered YouTube's own buttons): Home and ‹ Back are in the dock.
+        browserBar.visibility = View.GONE
+        dockBar?.setBackVisible(true)
         currentZoom = 1.0f
         browserWebView?.loadUrl(url)
+    }
+
+    /** Dock ‹ Back: the website's previous page, or back to the deck when there is none. */
+    private fun browserBack() {
+        val wv = browserWebView
+        if (isBrowsingWeb && wv != null && wv.canGoBack()) wv.goBack() else exitBrowserToHome()
     }
 
     fun exitBrowserToHome(reloadDeck: Boolean = false) {
@@ -512,6 +521,7 @@ class DashMatePresentation(
         DashMateStateBridge.currentPage = "home"
         releaseBrowser()
         browserBar.visibility = View.GONE
+        dockBar?.setBackVisible(false)
         closeAuthOverlay()
         dockBar?.visibility = View.VISIBLE
         dockBar?.updateCurrentPage("home")

@@ -68,12 +68,14 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
   #toast.on { opacity: 1; }
   /* Tall screens (Jaecoo J7): search and results on top, live map below. */
   @media (max-aspect-ratio: 1/1) {
+    html { font-size: clamp(14px, min(3.3vw, 1.85vh), 34px); }   /* 1.75vw made ~12 px text on the J7 */
     #app { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); gap: 1rem;
-           padding: calc(4.6rem + var(--dd-extra, 0px)) 1.4rem 1.4rem; }
+           padding: calc(max(84px, 3.4rem) + var(--dd-extra, 0px)) 1.4rem 1.4rem; }
     #results { max-height: 46vh; flex: none; }
     body:not(.typed) #results { display: none; }
   }
 </style>
+<script src="dd_tall.js"></script>
 </head>
 <body>
 <div id="app">
@@ -190,6 +192,7 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
   // State from the app: centre the search and map on the car's area (prayer zone / radar centre).
   window.ddUpdate = function (p) {
     if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { return; } }
+    if (p && p.layoutMode && window.ddSetLayoutMode) window.ddSetLayoutMode(p.layoutMode);   // Always tall / Automatic
     var r = p && p.radar;
     if (r && typeof r.lat === 'number' && typeof r.lon === 'number') here = { lat: r.lat, lon: r.lon };
     if (!mapAt) showMap(here.lat, here.lon, 13);

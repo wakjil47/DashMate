@@ -106,7 +106,7 @@ object DashMateStateBridge {
         context?.getSharedPreferences("dd_car_browser", Context.MODE_PRIVATE)?.getInt(LYRICS_DELAY_KEY, LYRICS_DELAY_DEFAULT)
             ?: LYRICS_DELAY_DEFAULT
     fun changeLyricsDelayMs(context: Context, deltaMs: Int): Int {
-        val v = (lyricsDelayMs(context) + deltaMs).coerceIn(-3000, 6000)
+        val v = (lyricsDelayMs(context) + deltaMs).coerceIn(-15000, 15000)   // up to 15 s sooner or later
         context.getSharedPreferences("dd_car_browser", Context.MODE_PRIVATE).edit().putInt(LYRICS_DELAY_KEY, v).apply()
         notifyStateChanged(context)
         return v

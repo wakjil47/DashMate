@@ -1337,9 +1337,13 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
     });
   }
 
+  // Phone Settings "Speedometer unit" saves speedMph on the layout (false/missing = km/h).
+  var lastSpeed = null, lastGps = false;
   function setSpeed(kmh, gps) {
-    $('speed').textContent = gps && kmh != null ? kmh : '–';
-    $('speedUnit').textContent = gps ? 'km/h' : tr('noGps', 'no GPS');
+    lastSpeed = kmh; lastGps = gps;
+    var mph = lastL.speedMph === true;
+    $('speed').textContent = gps && kmh != null ? (mph ? Math.round(kmh * 0.621371) : kmh) : '–';
+    $('speedUnit').textContent = gps ? (mph ? 'mph' : 'km/h') : tr('noGps', 'no GPS');
   }
 
   function renderMusic(m) {
@@ -1549,6 +1553,9 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
       el.setAttribute('data-ta', p.w.ta || DEFAULT_TA[p.w.id] || 'left');
     });
     renderShortcuts(l.shortcuts);
+    // Phone Settings "Dashboard media buttons": off hides prev / play / next on the music card.
+    $('controls').style.display = l.mediaButtons === false ? 'none' : '';
+    setSpeed(lastSpeed, lastGps);
     postGeometry();
   }
   window.applyLayout = applyLayout;

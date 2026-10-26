@@ -25,6 +25,8 @@ class DashMateDockBar(
     private val onPageSelected: (String) -> Unit,
     /** Closes DashMate and returns to the Android Auto screen (the red button at the end). */
     private val onExit: () -> Unit = {},
+    /** ‹ Back while a website is open: previous page, or back to the deck. */
+    private val onBack: () -> Unit = {},
 ) : FrameLayout(context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences("dd_car_browser", Context.MODE_PRIVATE)
@@ -60,6 +62,7 @@ class DashMateDockBar(
     private val dockPill: LinearLayout
     private val appsIcon: ImageView
     private val exitBtn: ImageView
+    private val backBtn: ImageView
 
     init {
         clipChildren = false
@@ -107,10 +110,13 @@ class DashMateDockBar(
             Triple("web", R.drawable.dd_ic_web, "Browser"),
             Triple("nav", R.drawable.dd_ic_nav, "Navigation (Waze Live Map)"),
         )
+        // ‹ Back sits right after Home and only shows while a website is open (the browser has no bar of its own).
+        backBtn = createIconButton("back", R.drawable.dd_ic_back, "Back") { onBack() }.apply { visibility = View.GONE }
         for ((id, drawableRes, desc) in items) {
             val btn = createIconButton(id, drawableRes, desc) { selectPage(id) }
             itemViews[id] = btn
             dockPill.addView(btn)
+            if (id == "home") dockPill.addView(backBtn)
         }
 
         // Exit: not a page, so it is never highlighted; red so it is easy to find.
@@ -156,6 +162,8 @@ class DashMateDockBar(
         }
         launcherBtn.imageTintList = ColorStateList.valueOf(inactiveIconTint)
         appsIcon.imageTintList = ColorStateList.valueOf(inactiveIconTint)
+        backBtn.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(inactiveItemBg) }
+        backBtn.imageTintList = ColorStateList.valueOf(inactiveIconTint)
         // Exit stays red so it is easy to find.
         exitBtn.background = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
@@ -190,6 +198,9 @@ class DashMateDockBar(
             onPageSelected(page)
         }
     }
+
+    /** Shows the ‹ Back button only while a website is open. */
+    fun setBackVisible(visible: Boolean) { backBtn.visibility = if (visible) View.VISIBLE else View.GONE }
 
     fun updateCurrentPage(page: String) {
         if (currentPage != page) {

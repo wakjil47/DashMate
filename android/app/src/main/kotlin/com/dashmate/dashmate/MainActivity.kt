@@ -251,6 +251,13 @@ class MainActivity : FlutterActivity() {
                 sp.edit().putString("theme", mode).apply()
                 result.success(true)
             }
+            "appVersion" -> {
+                // Real version from the build (pubspec version → versionName/versionCode).
+                val info = packageManager.getPackageInfo(packageName, 0)
+                @Suppress("DEPRECATION")
+                val code = if (android.os.Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()
+                result.success("${info.versionName} (build $code)")
+            }
             "getShowPrayer" -> result.success(sp.getBoolean("show_prayer", true))
             "getBookmarks" -> {
                 result.success(sp.getString("bookmarks", "[]"))

@@ -90,7 +90,8 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
   /* Lyrics Earlier / Later: lines up the lyrics with the car's sound (saved for next time). */
   #sync { display: flex; align-items: center; gap: 1vh; margin-top: 1.4vh; }
   #sync button { font: inherit; font-size: 2.3vh; font-weight: 600; min-height: 44px; padding: .5vh 1.8vh; border-radius: 99px;
-                 border: 1px solid var(--border); background: var(--surface); color: var(--ink); cursor: pointer; }
+                 border: 1px solid var(--border); background: var(--surface); color: var(--ink); cursor: pointer;
+                 touch-action: none; user-select: none; -webkit-user-select: none; }
   #syncHint { font-size: 1.9vh; color: var(--ink-3); margin-top: .6vh; }
   #syncVal { font-size: 2.2vh; color: var(--ink-2); min-width: 9vh; text-align: center; font-variant-numeric: tabular-nums; }
   .chip.live { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
@@ -177,6 +178,11 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
     #plain { font-size: clamp(20px, 5vw, 60px); padding: 8vh 4vw; text-align: center; }
     #message { font-size: clamp(22px, 6vw, 72px); }
     #message small { font-size: clamp(16px, 4vw, 44px); }
+    /* Sooner / Later on one line each (vh sizes wrapped "◀ Sooner" onto two lines on the J7). */
+    #sync { flex-wrap: wrap; gap: clamp(6px, 1.4vw, 16px); }
+    #sync button { font-size: clamp(14px, 3vw, 34px); padding: .35em .9em; white-space: nowrap; }
+    #syncVal { font-size: clamp(13px, 2.8vw, 30px); min-width: 3.4em; }
+    #syncHint { font-size: clamp(12px, 2.5vw, 28px); }
   }
   /* Small Android Auto split-screen panel (e.g. 460×370): one compact row (cover · song · buttons) below
      the floating dock bar (16 dp + 46 dp), lyrics underneath. */
@@ -211,7 +217,7 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
       <div id="title">DashMate</div>
       <div id="artist">Waiting for music…</div>
       <div id="chips"></div>
-      <div id="sync"><button type="button" data-delay="-250" aria-label="Show lyrics sooner">◀ Sooner</button><span id="syncVal"></span><button type="button" data-delay="250" aria-label="Show lyrics later">Later ▶</button></div>
+      <div id="sync"><button type="button" data-delay="-500" aria-label="Show lyrics sooner (hold to keep going, up to 15 s)">◀ Sooner</button><span id="syncVal"></span><button type="button" data-delay="500" aria-label="Show lyrics later (hold to keep going, up to 15 s)">Later ▶</button></div>
       <div id="syncHint">Lyrics ahead of the singer? Tap Later.</div>
     </div>
     <div id="progress"><div id="bar"></div></div>
@@ -306,13 +312,22 @@ window.ddTheme=function(t){document.documentElement.dataset.theme=(t==='dark'?'d
   /** Re-anchors the clock to `target` ms: glide if close, jump otherwise. */
   function showDelay(ms) {
     var e = document.getElementById('syncVal');
-    if (e) e.textContent = (ms > 0 ? '+' : '') + (ms / 1000).toFixed(2) + ' s';
+    if (e) e.textContent = (ms > 0 ? '+' : '') + (ms / 1000).toFixed(1) + ' s';
   }
-  document.addEventListener('click', function (e) {
-    var b = e.target.closest && e.target.closest('[data-delay]');
-    if (!b || !window.AutoDeck || !AutoDeck.lyricsDelay) return;
-    // "Later" = lyrics wait longer for the car's sound; the new delay arrives with the next update.
-    showDelay(AutoDeck.lyricsDelay(+b.getAttribute('data-delay')));
+  // Sooner / Later: each tap moves 0.5 s; press and hold to keep going (up to 15 s either way).
+  // "Later" = lyrics wait longer for the car's sound; the new delay arrives with the next update.
+  var holdT = null;
+  function nudge(b) { if (window.AutoDeck && AutoDeck.lyricsDelay) showDelay(AutoDeck.lyricsDelay(+b.getAttribute('data-delay'))); }
+  function stopHold() { if (holdT) { clearTimeout(holdT); holdT = null; } }
+  document.addEventListener('pointerdown', function (e) {
+    var b = e.target.closest && e.target.closest('[data-delay]'); if (!b) return;
+    e.preventDefault(); stopHold(); nudge(b);
+    var rep = function () { nudge(b); holdT = setTimeout(rep, 140); };
+    holdT = setTimeout(rep, 450);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave', 'blur'].forEach(function (t) { document.addEventListener(t, stopHold, true); });
+  document.addEventListener('click', function (e) {   // keyboard (Enter / Space) only; taps are handled above
+    var b = e.target.closest && e.target.closest('[data-delay]'); if (b && e.detail === 0) nudge(b);
   });
   function syncClock(target, playing, hard) {
     var now = performance.now();

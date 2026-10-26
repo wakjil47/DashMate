@@ -48,8 +48,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (mounted) setState(() => _userName = name);
         })
         .catchError((_) {});
+    _channel
+        .invokeMethod<String>('appVersion')
+        .then((v) {
+          if (v != null && mounted) setState(() => _appVersion = v);
+        })
+        .catchError((_) {});
     _loadCarOptions();
   }
+
+  /// The real build version (from pubspec via the native side), e.g. "1.0.9 (build 10)".
+  String _appVersion = '';
 
   // "tall" (default) or "auto"; MainActivity keeps it in prefs (dashmate_layout_mode).
   String _layoutMode = 'tall';
@@ -135,11 +144,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (_) {}
     final font = await CarLayout.option<String>('clockFont');
     final clock24 = await CarLayout.option<bool>('clock24');
+    final speedMph = await CarLayout.option<bool>('speedMph');
+    final mediaButtons = await CarLayout.option<bool>('mediaButtons');
     if (!mounted) return;
     setState(() {
       if (font != null && font.isNotEmpty)
         _activeFont = font[0].toUpperCase() + font.substring(1);
       if (clock24 != null) _is24Hour = clock24;
+      if (speedMph != null) _useKmh = !speedMph;
+      if (mediaButtons != null) _mediaButtonsOverride = mediaButtons;
     });
   }
 
@@ -429,7 +442,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(fontSize: 12, color: t.ink2),
                     ),
                     value: _useKmh,
-                    onChanged: (val) => setState(() => _useKmh = val),
+                    onChanged: (val) {
+                      setState(() => _useKmh = val);
+                      CarLayout.setOptions({'speedMph': !val});
+                    },
                   ),
                 ),
                 Divider(height: 1, indent: 56, color: t.border),
@@ -450,12 +466,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      'Turn off if your car\'s dashboard / meter map or media buttons stop working while DashMate is open',
+                      'Previous / play / next on the car\'s music card',
                       style: TextStyle(fontSize: 11, color: t.ink2),
                     ),
                     value: _mediaButtonsOverride,
-                    onChanged: (val) =>
-                        setState(() => _mediaButtonsOverride = val),
+                    onChanged: (val) {
+                      setState(() => _mediaButtonsOverride = val);
+                      CarLayout.setOptions({'mediaButtons': val});
+                    },
                   ),
                 ),
               ],
@@ -603,7 +621,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
           Center(
             child: Text(
-              'DashMate Deck 1.0.0 (Personal Build)\nBuilt for Android Auto',
+              'DashMate Deck ${_appVersion.isEmpty ? '' : '$_appVersion '}(Personal Build)\nBuilt for Android Auto',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11, color: t.ink3, height: 1.4),
             ),
